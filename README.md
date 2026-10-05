@@ -13,19 +13,20 @@ This project started as a solution to the CodeCrafters ["Build Your Own Shell"](
 - Tab completion that's aware of _where_ the cursor is:
   - Command position → matches shell builtins and `$PATH` executables
   - Argument position → matches files/directories relative to the current word
-  - Single match completes inline; multiple matches expand to their longest common prefix, then list on a second Tab
+  - A single match completes inline
+  - Multiple matches expand to their longest common prefix, then list on a second Tab
 
 **Built-in commands**
 
-- `echo`, `type`, `pwd`, `cd` (with `~` expansion), `exit`
-- `history` — full `-r` (read), `-w` (write), `-a` (append) support, plus `history [n]` to show the last _n_ entries
+- `echo`, `type`, `pwd`, `cd` (with `~` expansion for the bare home target), `exit`
+- `history` — full `-r` (read), `-w` (write), `-a` (append) support, plus `history [_n_]` to show the last _n_ entries
 - Persistent history via the `HISTFILE` environment variable: loaded automatically on startup, flushed automatically on exit
 
 **Pipelines**
 
 - Arbitrary-length pipelines (`cmd1 | cmd2 | cmd3 | ...`)
 - Semicolon-separated command lists on one line (`cmd1 ; cmd2`)
-- Single-stage commands run builtins in-process (so `cd`, `history`, etc. correctly mutate shell state instead of a throwaway child)
+- Single-stage commands run builtins in-process, so `cd`, `history`, etc. can mutate shell state
 
 **I/O Redirection**
 
@@ -40,7 +41,7 @@ This project started as a solution to the CodeCrafters ["Build Your Own Shell"](
 
 **Aliases**
 
-- A command alias system, wired through the tokenizer via `alias_map`. Configured in `setupAliasMap()` (in `src/cmd.cpp`):
+- A command alias system, wired through the tokenizer via `alias_map` and configured in `setupAliasMap()` (in `src/cmd.cpp`):
 
 ```cpp
    void setupAliasMap() {
@@ -152,6 +153,14 @@ cd codecrafters-shell-cpp
   6 history
   7 history 5
   ```
+
+## How It Works
+
+At a high level, each line is handled like this:
+
+1. `main.cpp` runs the REPL and delegates each input line to `CustomReadline`'s raw-`termios` editor, which handles arrow-key history recall, Ctrl+L/Ctrl+D, and Tab completion.
+2. `utils.cpp` tokenizes the finished line into commands, honoring quoting, escapes, and aliases, then resolves each command to a builtin or a `$PATH` executable.
+3. `cmd.cpp` executes the parsed commands — builtins in-process, external commands and pipelines via `fork`/`exec`, with redirection applied around each stage — and persists history to `HISTFILE`.
 
 ## Project Structure
 

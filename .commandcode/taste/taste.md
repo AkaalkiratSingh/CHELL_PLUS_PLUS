@@ -1,0 +1,2 @@
+- Uses the Ghostty terminal emulator. Confidence: 0.9
+- Expects markdown formatting (e.g., **bold**) to be rendered as styled text rather than shown as raw syntax in terminal output. Confidence: 0.8
